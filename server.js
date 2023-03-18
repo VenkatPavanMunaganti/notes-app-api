@@ -34,33 +34,24 @@ let notes = [
   }
 ];
 
+//To DO: Write the end point for getting list of notes
 // GET /api/notes
 app.get("/api/notes", (req, res) => {
-  res.json(notes);
+  
 });
 
+//To DO: Write the end point to add new note to the list
 // POST /api/notes
 app.post("/api/notes", (req, res) => {
-  const lastId= notes.length === 0? 0: notes[notes.length-1].id
-  const note = {
-    content: req.body.content,
-    important: req.body.important,
-    id: lastId + 1,
-  };
-  notes.push(note);
-  res.json(note);
+  
 });
 
+//To DO: Write an endpoint to delete from the list
 // DELETE /api/notes/:id
 app.delete("/api/notes/:id", (req, res) => {
-  const noteId = parseInt(req.params.id);
-  notes = notes.filter((note) => note.id !== noteId);
-  res.set("Cache-Control", "no-cache");
-  res.set("Pragma", "no-cache");
-  res.sendStatus(204);
+  
 });
 
+//To Do: write the code to start the server in port 5000
 const PORT = 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
