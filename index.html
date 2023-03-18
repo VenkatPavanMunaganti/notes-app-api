@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Notes App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #main-container {
+      background-color: #F0EDEE;
+      width: 700px;
+      margin: 50px auto;
+      border-radius: 5px;
+      box-shadow: 0px 0px 3px #00000047;
+    }
+
+    h1 {
+      padding-top: 40px;
+      text-align: center;
+      color: black;
+    }
+
+    #content-container {
+      padding: 20px;
+    }
+
+    ul li {
+      background-color: #fff;
+      padding: 10px;
+      margin: 10px;
+      list-style: none;
+      border-radius: 5px;
+      box-shadow: 0px 0px 3px #00000047;
+      color: black;
+      font-size: large;
+    }
+
+    li a {
+      float: right;
+    }
+
+    #addform {
+      padding: 40px;
+      margin: 10px auto;
+      width: fit-content;
+      font-size: large;
+    }
+
+    #addform input {
+      margin: 5px 0;
+      padding: 10px;
+    }
+
+    tr td {
+      padding: 5px;
+    }
+
+    h2 {
+      text-align: center;
+      color: black;
+    }
+
+    #addform input[type='submit'] {
+      background-color: black;
+      color: white;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      font-size: large;
+      margin: 5px 0;
+    }
+
+    .important {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="main-container">
+    <h1>Notes</h1>
+    <div id="content-container">
+      <ul id="notes">
+        <!-- Notes will be dynamically added here -->
+      </ul>
+      <div id="addform">
+        <h2>Add a Note</h2>
+        <form id="note-form">
+          <table>
+            <tr>
+              <td><label for="content">Content:</label></td>
+              <td><input type="text" id="content" name="content" required /></td>
+            </tr>
+            <tr>
+              <td><label for="important">Important:</label></td>
+              <td><input type="checkbox" id="important" name="important" /></td>
+            </tr>
+            <tr>
+              <td colspan="2"> <input type="submit" value="Add Note" /></td>
+            </tr>
+          </table>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const notesList = document.getElementById("notes");
+    const noteForm = document.getElementById("note-form");
+    const BASE_URI = `http://localhost:3000/api`;
+
+    function deleteNoteHandler(noteId, li) {
+      const deleteXhr = new XMLHttpRequest();
+      deleteXhr.open('DELETE', `${BASE_URI}/notes/` + noteId);
+      deleteXhr.onload = function () {
+        if (deleteXhr.status === 204) {
+          // Remove the note from the list
+          li.parentNode.removeChild(li);
+        } else {
+          console.error('Failed to delete note');
+        }
+      };
+      deleteXhr.onerror = function () {
+        console.error('Error occurred while deleting note');
+      };
+      deleteXhr.send();
+    }
+
+    function createNoteLi(note) {
+      const li = document.createElement('li');
+      li.textContent = note.content;
+      const a = document.createElement('a');
+      a.setAttribute("href", `${BASE_URI}/notes/` + note.id);
+      a.textContent = "Delete";
+      // Add an event listener to the delete hyperlink
+      a.addEventListener('click', function (event) {
+        // Prevent the default action of the hyperlink
+        event.preventDefault();
+        const noteId = note.id;
+        deleteNoteHandler(noteId, li);
+      });
+      li.appendChild(a);
+      if (note.important) {
+        li.classList.add('important');
+      }
+      return li;
+    }
+
+    // Initial Call to the backend API
+    // XML Http request to get all notes and add them to the list
+    // creating XMLHttpRequest object
+    const xhr = new XMLHttpRequest();
+    //Opening a get request
+    xhr.open('GET', `${BASE_URI}/notes`);
+    //Below callback function is called once we get response from the backend API
+    xhr.onload = function () {
+      //Check the status code of the response
+      if (xhr.status === 200) {
+        //Parse the JSON response from the backend
+        const notes = JSON.parse(xhr.responseText);
+        //Loop through all the note object and create respective HTML LI elements
+        notes.forEach(function (note) {
+          const li = createNoteLi(note);
+          //Append the new list element to the notesList
+          notesList.appendChild(li);
+        });
+      } else {
+        console.error('Failed to fetch notes');
+      }
+    };
+    //Handle the error if request is failed
+    xhr.onerror = function () {
+      console.error('Error occurred while fetching notes');
+    };
+    //Send the request to the API
+    xhr.send();
+
+    // Handle form submission to add a new note
+    noteForm.addEventListener("submit", event => {
+      //Stop the default event after clicking the submit button
+      event.preventDefault();
+      //Create the form data object
+      const formData = new FormData(event.target);
+      //Create a note object in JSON format
+      const note = {
+        content: formData.get("content"),
+        important: formData.get("important") === "on",
+      };
+      //Create XML http request object
+      const xhr = new XMLHttpRequest();
+      //Open the request
+      xhr.open('POST', `${BASE_URI}/notes`);
+      //Set content type to JSON 
+      xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      //Below callback function is called once we get response from the backend API
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          const note = JSON.parse(xhr.responseText);
+          const li = createNoteLi(note);
+          notesList.appendChild(li);
+          noteForm.reset();
+        } else {
+          console.error('Failed to add note');
+        }
+      };
+      xhr.onerror = function () {
+        console.error('Error occurred while adding note');
+      };
+      //Send the JSON data to the notes API add end point
+      xhr.send(JSON.stringify(note));
+    });
+  </script>
+</body>
+</html>
